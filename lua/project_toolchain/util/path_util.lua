@@ -1,7 +1,7 @@
 local M = {}
 
-local config = require("project_dir_cfg.config")
-local os = require("project_dir_cfg.util.os")
+local config = require("project_toolchain.config")
+local os = require("project_toolchain.util.os")
 local uv = vim.uv
 
 if vim.fn.has('win32') == 1 then
@@ -15,7 +15,7 @@ M.datapath = M.datapath .. "/project_nvim" -- directory
 M.historyfile = M.datapath .. "/project_history" -- file
 
 function M.init()
-    M.datapath = require("project_dir_cfg.config").options.datapath
+    M.datapath = require("project_toolchain.config").options.datapath
     M.datapath = M.datapath .. "/project_nvim" -- directory
     M.historyfile = M.datapath .. "/project_history" -- file
 end

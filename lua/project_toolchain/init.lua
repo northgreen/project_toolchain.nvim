@@ -1,9 +1,9 @@
-local config = require('project_dir_cfg.config')
-local _log = require('project_dir_cfg.util.log')
-local log = require('project_dir_cfg.util.log_util')
+local config = require('project_toolchain.config')
+local _log = require('project_toolchain.util.log')
+local log = require('project_toolchain.util.log_util')
 
 local M = {}
-local module_name = 'project_dir_cfg.init'
+local module_name = 'project_toolchain.init'
 
 local function auto_command_setup()
     _log.debug(module_name, 'setting up autocommands')
@@ -13,20 +13,20 @@ local function auto_command_setup()
         vim.api.nvim_create_autocmd({'VimEnter', 'BufEnter'}, {
             group = augroup_id,
             pattern = '*',
-            callback = require('project_dir_cfg.project').on_buf_enter
+            callback = require('project_toolchain.project').on_buf_enter
         })
     end
 
     vim.api.nvim_create_autocmd({'VimLeavePre'}, {
         group = augroup_id,
         pattern = '*',
-        callback = require("project_dir_cfg.project.history").write_projects_to_history
+        callback = require("project_toolchain.project.history").write_projects_to_history
     })
 
     vim.api.nvim_create_autocmd({'BufEnter'}, {
         group = augroup_id,
         pattern = '*',
-        callback = require('project_dir_cfg.cfg').on_buf_enter
+        callback = require('project_toolchain.cfg').on_buf_enter
     })
 end
 
@@ -35,7 +35,7 @@ function M.setup(opt)
 
     _log.setup({log_level = string.upper(config.options.log_level)})
 
-    local vim_outputter = require("project_dir_cfg.util.log.nvim_output")(log)
+    local vim_outputter = require("project_toolchain.util.log.nvim_output")(log)
     if not vim_outputter then vim_outputter = log.out_putters.std_outputter end
     log.setup({
         rotes = {
@@ -52,7 +52,7 @@ function M.setup(opt)
     })
 
 
-    local glob = require("project_dir_cfg.util.globtopattern")
+    local glob = require("project_toolchain.util.globtopattern")
     local home = vim.fn.expand("~")
 
     config.options.exclude_dirs = vim.tbl_map(function(pattern)
@@ -64,17 +64,17 @@ function M.setup(opt)
 
     vim.opt.autochdir = false -- implicitly unset autochdir
 
-    require("project_dir_cfg.util.path_util").init()
-    require("project_dir_cfg.project").init()
+    require("project_toolchain.util.path_util").init()
+    require("project_toolchain.project").init()
 
     auto_command_setup()
-    require("project_dir_cfg.commands").setup()
+    require("project_toolchain.commands").setup()
 end
 
 if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
     print("Test Start")
     M.setup()
-    local history = require("project_dir_cfg.project.history")
+    local history = require("project_toolchain.project.history")
     print(vim.inspect(history.get_recent_projects()))
     print(vim.inspect(history.recent_projects))
 end

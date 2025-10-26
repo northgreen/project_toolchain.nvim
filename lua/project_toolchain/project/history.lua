@@ -1,4 +1,4 @@
-local path = require("project_dir_cfg.util.path_util")
+local path = require("project_toolchain.util.path_util")
 local uv = vim.uv
 local M = {}
 

@@ -1,12 +1,12 @@
 local M = {}
 
-local config = require("project_dir_cfg.config")
-local history = require("project_dir_cfg.project.history")
-local glob = require("project_dir_cfg.util.globtopattern")
-local path = require("project_dir_cfg.util.path_util")
+local config = require("project_toolchain.config")
+local history = require("project_toolchain.project.history")
+local glob = require("project_toolchain.util.globtopattern")
+local path = require("project_toolchain.util.path_util")
 local uv = vim.uv
 
-M.buf_is_file = require("project_dir_cfg.util.buf_util").buf_is_file
+M.buf_is_file = require("project_toolchain.util.buf_util").buf_is_file
 
 -- Internal states
 M.attached_lsp = false

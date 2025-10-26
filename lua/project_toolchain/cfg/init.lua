@@ -1,10 +1,10 @@
 local M = {}
 
-local buf_util = require('project_dir_cfg.util.buf_util')
-local path = require('project_dir_cfg.util.path_util')
-local project = require('project_dir_cfg.project')
-local log = require('project_dir_cfg.util.log')
-local module_name = 'project_dir_cfg.cfg'
+local buf_util = require('project_toolchain.util.buf_util')
+local path = require('project_toolchain.util.path_util')
+local project = require('project_toolchain.project')
+local log = require('project_toolchain.util.log')
+local module_name = 'project_toolchain.cfg'
 local uv = vim.uv
 
 M.cur_project_config = {}
