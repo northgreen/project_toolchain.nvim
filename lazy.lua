@@ -1,5 +1,5 @@
 return {
-	"project_dir_cfg",
+	"northgreen/project_toolchain.nvim",
 	lazy = true,
 	event = "BufRead",
 	opts = {},
