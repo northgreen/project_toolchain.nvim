@@ -28,6 +28,12 @@ local function auto_command_setup()
         pattern = '*',
         callback = require('project_toolchain.cfg').on_buf_enter
     })
+
+    vim.api.nvim_create_autocmd({'BufEnter'}, {
+        group = augroup_id,
+        pattern = '*',
+        callback = require('project_toolchain.project_config').load_ftplugin_for_buffer
+    })
 end
 
 function M.setup(opt)
@@ -65,6 +71,7 @@ function M.setup(opt)
     vim.opt.autochdir = false -- implicitly unset autochdir
 
     require("project_toolchain.util.path_util").init()
+    require("project_toolchain.project_config").init()
     require("project_toolchain.project").init()
 
     auto_command_setup()

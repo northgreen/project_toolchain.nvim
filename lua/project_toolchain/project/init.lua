@@ -170,6 +170,11 @@ function M.set_pwd(dir, method)
                 vim.notify("Set CWD to " .. dir .. " using " .. method)
             end
         end
+
+        -- Load project-specific config if enabled
+        if config.options.auto_load_project_config then
+            require("project_toolchain.project_config").load_project_config(dir)
+        end
         return true
     end
 

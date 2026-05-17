@@ -17,6 +17,11 @@ M.defaults = {
     -- the option to manually do so using `:ProjectRoot` command.
     manual_mode = false,
 
+    -- Automatically load project-specific Lua config from .nvim_proj/
+    -- when entering a project directory. Prompts user for trust before
+    -- loading executable configs (init.lua, lsp/).
+    auto_load_project_config = true,
+
     -- Methods of detecting the root directory. **"lsp"** uses the native neovim
     -- lsp, while **"pattern"** uses vim-rooter like glob pattern matching. Here
     -- order matters: if one is not detected, the other is used as fallback. You
