@@ -1,6 +1,7 @@
 # 🗂️ project_toolchain.nvim
 
-> 基于 [project.nvim](https://github.com/ahmedkhalf/project.nvim) 增强的 Neovim 项目根目录检测与管理插件。
+本项目致力于优化nvim对于项目编辑的体验，打造一个更加舒适的项目体验
+基于 [project.nvim](https://github.com/ahmedkhalf/project.nvim) 增强的 Neovim 项目根目录检测与管理插件。
 
 ## ✨ 特性
 
@@ -44,8 +45,7 @@ use {
 
 ```lua
 require("project_toolchain").setup({
-    debug = false,
-    log_level = "info",
+    log_level = "warn",
     manual_mode = false,
     detection_methods = { "lsp", "pattern" },
     ignore_lsp = { "lua_ls" },

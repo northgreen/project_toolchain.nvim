@@ -3,7 +3,7 @@ local M = {}
 ---@class ProjectOptions
 M.defaults = {
     debug = true,
-    log_level = 'info',
+    log_level = 'warn',
 
     project = {
         -- All the patterns used to detect root dir, when **"pattern"** is in
