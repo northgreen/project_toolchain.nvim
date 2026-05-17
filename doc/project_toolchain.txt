@@ -124,14 +124,203 @@ COMMANDS                                        *project_toolchain-commands*
     将当前目录手动添加为项目根目录。
 
 ==============================================================================
+API REFERENCE                                 *project_toolchain-api*
+
+==============================================================================
+1. project_toolchain.project                *project_toolchain.project*
+
+项目根目录检测与目录切换核心模块。
+
+函数:
+    *project_toolchain.project.find_lsp_root()*
+        查找当前 buffer 的 LSP 根目录。
+        返回: (root_dir|nil, lsp_name|nil)
+
+    *project_toolchain.project.find_pattern_root()*
+        通过模式匹配查找项目根目录。
+        从当前 buffer 所在目录向上搜索 proj_patterns。
+        返回: (root_dir|nil, method|nil)
+
+    *project_toolchain.project.find_project_root()*
+        综合查找项目根目录。按 detection_methods 顺序依次尝试各检测方式。
+        返回: (root_dir|nil, method|nil)
+
+    *project_toolchain.project.set_pwd(dir, method)*
+        设置工作目录。支持 global/tab/win 作用域（由 scope_chdir 配置）。
+        自动记录到 session 历史并加载项目级配置。
+        参数:
+            dir:    目标目录路径
+            method: 检测方法名称（用于日志/通知）
+        返回: boolean — 是否成功切换
+
+    *project_toolchain.project.on_buf_enter()*
+        缓冲区进入时的自动检测回调。由 BufEnter/VimEnter 事件触发。
+
+    *project_toolchain.project.add_project_manually()*
+        手动添加当前目录为项目根目录。由 :AddProject 命令调用。
+
+    *project_toolchain.project.init()*
+        初始化模块。附加 LSP start_client monkey-patch，读取历史文件。
+
+状态字段:
+    *project_toolchain.project.last_project*
+        最后切换的项目路径 (string|nil)
+
+    *project_toolchain.project.attached_lsp*
+        是否已 monkey-patch vim.lsp.start_client (boolean)
+
+    *project_toolchain.project.buf_is_file*
+        检查当前 buffer 是否为有效文件 (function)
+
+==============================================================================
+2. project_toolchain.project.history        *project_toolchain.project.history*
+
+项目历史记录管理模块。支持跨 session 持久化，最多保存 100 条记录。
+
+函数:
+    *project_toolchain.project.history.get_recent_projects()*
+        获取去重后的最近项目列表。合并 session_projects 和 recent_projects。
+        仅返回仍存在的目录。
+        返回: string[]
+
+    *project_toolchain.project.history.read_projects_from_history()*
+        异步读取历史文件。设置 fs_event watch 监听文件变更。
+
+    *project_toolchain.project.history.write_projects_to_history()*
+        同步写入历史文件。由 VimLeavePre 事件触发。
+        去重、过滤已删除目录、截断至 100 条。
+
+    *project_toolchain.project.history.delete_project(project)*
+        从 recent_projects 中删除指定项目。
+        参数: project — 包含 .value 字段的条目
+
+状态字段:
+    *project_toolchain.project.history.recent_projects*
+        来自之前 Neovim session 的项目列表 (table|nil)
+
+    *project_toolchain.project.history.session_projects*
+        当前 session 的项目列表 (table)
+
+    *project_toolchain.project.history.has_watch_setup*
+        是否已设置 fs_event watch (boolean)
+
+==============================================================================
+3. project_toolchain.cfg                     *project_toolchain.cfg*
+
+项目级 JSON 配置管理模块。读取/写入 <project>/.nvim_proj/config.json。
+
+函数:
+    *project_toolchain.cfg.get_cfg_dir()*
+        获取当前项目的 .nvim_proj/ 目录路径。
+        返回: string
+
+    *project_toolchain.cfg.get_cfg_file_path()*
+        获取 config.json 完整路径。
+        返回: string
+
+    *project_toolchain.cfg.load_config()*
+        异步加载项目 JSON 配置到 cur_project_config。
+
+    *project_toolchain.cfg.write_config()*
+        异步写入 cur_project_config 到 config.json。
+        自动创建目录和 .gitignore。
+
+    *project_toolchain.cfg.on_buf_enter()*
+        进入 buffer 时加载配置。
+
+    *project_toolchain.cfg.on_buf_exit()*
+        离开 buffer 时写入配置。
+
+状态字段:
+    *project_toolchain.cfg.cur_project_config*
+        当前项目的 JSON 配置表 (table)
+
+==============================================================================
+4. project_toolchain.project_config         *project_toolchain.project_config*
+
+信任系统与 Lua 配置加载模块。SHA256 哈希校验，防止恶意配置执行。
+
+函数:
+    *project_toolchain.project_config.init()*
+        初始化信任系统。设置信任文件路径并加载信任列表。
+
+    *project_toolchain.project_config.load_trusted_list()*
+        从 JSON 文件加载信任列表（同步）。
+
+    *project_toolchain.project_config.save_trusted_list()*
+        保存信任列表到 JSON 文件（同步）。
+
+    *project_toolchain.project_config.is_trusted(project_path)*
+        检查项目是否已信任。
+        参数: project_path — 项目根目录路径
+        返回: boolean
+
+    *project_toolchain.project_config.trust_project(project_path, hash)*
+        信任项目并保存（立即持久化）。
+        参数:
+            project_path: 项目根目录路径
+            hash:         配置聚合哈希值（可选）
+
+    *project_toolchain.project_config.untrust_project(project_path)*
+        撤销项目信任并保存。
+
+    *project_toolchain.project_config.compute_file_hash(file_path)*
+        计算单个文件的 SHA256 哈希值。
+        返回: string|nil
+
+    *project_toolchain.project_config.compute_project_hash(cfg_dir)*
+        计算项目配置的聚合哈希值。
+        收集 init.lua、lsp/*.lua、ftplugin/*.lua，分别计算 SHA256 后排序拼接再 hash。
+        返回: string
+
+    *project_toolchain.project_config.prompt_trust(project_path, hash, on_trust, on_deny)*
+        弹出信任提示（使用 vim.ui.select）。
+
+    *project_toolchain.project_config.load_init_lua(cfg_dir)*
+        加载 .nvim_proj/init.lua。
+
+    *project_toolchain.project_config.load_lsp_configs(cfg_dir)*
+        加载 .nvim_proj/lsp/ 下所有 .lua 文件。
+
+    *project_toolchain.project_config.load_ftplugin(cfg_dir)*
+        加载 .nvim_proj/ftplugin/ 下匹配当前 buffer filetype 的文件。
+        加载 common.lua（所有 filetype 生效）和 <filetype>.lua。
+
+    *project_toolchain.project_config.load_project_config(project_path)*
+        主入口：加载项目配置（含信任检查 + 哈希比对）。
+        流程:
+        1. 检查是否已加载（防重复）
+        2. 无可执行配置 → 直接加载
+        3. 未信任 → 弹出信任提示
+        4. 哈希不匹配 → 清除缓存，重新提示
+        5. 哈希匹配 → 直接加载
+
+    *project_toolchain.project_config.load_ftplugin_for_buffer()*
+        为当前 buffer 的 filetype 加载 ftplugin。
+        由 BufEnter 事件触发，不需要信任检查。
+
+状态字段:
+    *project_toolchain.project_config.trusted_file*
+        信任列表文件路径 (string|nil)
+
+    *project_toolchain.project_config.trusted_projects*
+        已信任项目表 { [path] = { hash = string|nil } }
+
+    *project_toolchain.project_config.denied_projects*
+        当前 session 拒绝的项目 { [path] = true }
+
+    *project_toolchain.project_config.loaded_projects*
+        已加载的项目（防重复加载）{ [path] = true }
+
+=============================================================================
 TELESCOPE                                       *project_toolchain-telescope*
 
 加载扩展: >
-    require("telescope").load_extension("project_dir_cfg")
+    require("telescope").load_extension("project_toolchain")
 <
 
 调用项目选择器: >
-    require("telescope").extensions.project_dir_cfg.projects()
+    require("telescope").extensions.project_toolchain.projects()
 <
 
 快捷键:
