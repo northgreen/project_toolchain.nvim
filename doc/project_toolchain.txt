@@ -1,0 +1,213 @@
+*project_toolchain.txt*  自动项目根目录检测与管理插件
+
+==============================================================================
+INTRODUCTION                                    *project_toolchain* *project_toolchain-intro*
+
+基于 project.nvim 增强的 Neovim 项目根目录检测与管理插件。
+
+特性:
+- 自动检测项目根目录并切换工作目录
+- 支持 LSP 和文件模式匹配，按顺序回退
+- 项目级 Lua 配置（init.lua、LSP 配置、ftplugin）
+- SHA256 哈希信任机制，防止恶意配置
+- Telescope 项目选择器扩展
+- 项目历史记录（最多 100 条）
+- 支持 global / tab / win 级别的目录切换
+
+==============================================================================
+INSTALLATION                                    *project_toolchain-install*
+
+lazy.nvim（推荐）: >
+    {
+        "ictye/project_toolchain.nvim",
+        dependencies = { "MunifTanjim/nui.nvim" },
+        config = function()
+            require("project_toolchain").setup()
+        end,
+    }
+<
+
+packer.nvim: >
+    use {
+        "ictye/project_toolchain.nvim",
+        requires = { "MunifTanjim/nui.nvim" },
+        config = function()
+            require("project_toolchain").setup()
+        end,
+    }
+<
+
+==============================================================================
+SETUP                                           *project_toolchain-setup*
+
+*project_toolchain.setup()*
+    初始化插件。必须在配置中调用此函数。
+
+    用法: >
+        require("project_toolchain").setup({
+            -- 配置选项
+        })
+<
+
+==============================================================================
+OPTIONS                                         *project_toolchain-options*
+
+*project_toolchain-debug*
+    debug: `boolean` | 默认值: `false`
+    启用调试模式。
+
+*project_toolchain-log_level*
+    log_level: `string` | 默认值: `"info"`
+    日志级别。可选值: `"debug"`, `"info"`, `"warn"`, `"error"`
+
+*project_toolchain-manual_mode*
+    manual_mode: `boolean` | 默认值: `false`
+    设为 `true` 时禁用自动切换目录，仅可通过 |:ProjectRoot| 命令手动触发。
+
+*project_toolchain-detection_methods*
+    detection_methods: `string[]` | 默认值: `{"lsp", "pattern"}`
+    检测方式及回退顺序。支持 `"lsp"` 和 `"pattern"`。顺序很重要：
+    如果第一种方式未检测到，则使用下一种作为回退。
+
+*project_toolchain-ignore_lsp*
+    ignore_lsp: `string[]` | 默认值: `{"lua_ls"}`
+    忽略的 LSP 客户端名称列表。
+
+*project_toolchain-exclude_dirs*
+    exclude_dirs: `string[]` | 默认值: `{}`
+    排除的目录模式列表（支持 `~/` 前缀）。在这些目录中不会计算项目根目录。
+
+*project_toolchain-proj_patterns*
+    proj_patterns: `string[]` | 默认值: 见下方
+    项目根目录标记文件/目录列表。支持前缀修饰符:
+    - `=` 精确匹配目录名
+    - `^` 祖先目录匹配
+    - `>` 子目录匹配
+    - `!` 排除匹配
+    
+    默认值: >
+        { ".nvim_proj", ".git", "_darcs", ".hg", ".bzr", ".svn",
+          "Makefile", "package.json" }
+<
+
+*project_toolchain-show_hidden*
+    show_hidden: `boolean` | 默认值: `false`
+    在 Telescope 选择器中显示隐藏文件。
+
+*project_toolchain-silent_chdir*
+    silent_chdir: `boolean` | 默认值: `true`
+    静默切换目录，不弹出通知消息。
+
+*project_toolchain-scope_chdir*
+    scope_chdir: `string` | 默认值: `"global"`
+    目录切换的作用域。可选值:
+    - `"global"`  全局切换（使用 `:cd`）
+    - `"tab"`     标签页级别（使用 `:tcd`）
+    - `"win"`     窗口级别（使用 `:lcd`）
+
+*project_toolchain-auto_load_project_config*
+    auto_load_project_config: `boolean` | 默认值: `true`
+    进入项目时自动加载项目级 Lua 配置。
+
+*project_toolchain-datapath*
+    datapath: `string` | 默认值: `vim.fn.stdpath("data")`
+    项目历史文件存储路径的基础目录。
+
+==============================================================================
+COMMANDS                                        *project_toolchain-commands*
+
+*:ProjectRoot*
+    手动触发项目根目录检测并切换工作目录。
+    在 |project_toolchain-manual_mode| 启用时特别有用。
+
+*:AddProject*
+    将当前目录手动添加为项目根目录。
+
+==============================================================================
+TELESCOPE                                       *project_toolchain-telescope*
+
+加载扩展: >
+    require("telescope").load_extension("project_dir_cfg")
+<
+
+调用项目选择器: >
+    require("telescope").extensions.project_dir_cfg.projects()
+<
+
+快捷键:
+    模式        按键            动作
+    ──────────────────────────────────────────────
+    Insert      <CR>            选择项目 → 查找文件
+    Insert      <C-f>           在项目内查找文件
+    Insert      <C-s>           在项目内搜索内容
+    Insert      <C-b>           浏览项目文件
+    Insert      <C-r>           最近打开的文件
+    Insert      <C-w>           切换工作目录
+    Insert      <C-d>           从历史中删除项目
+
+    Normal 模式下使用相同按键（无需 Ctrl 前缀）。
+
+==============================================================================
+PROJECT CONFIG                                  *project_toolchain-project-config*
+
+在项目根目录创建 `.nvim_proj/` 目录，即可为该项目加载专属配置。
+
+目录结构: >
+    my-project/
+    ├── .nvim_proj/
+    │   ├── init.lua              # 项目初始化脚本
+    │   ├── lsp/
+    │   │   └── my_lsp.lua        # 项目专属 LSP 配置
+    │   ├── ftplugin/
+    │   │   ├── common.lua        # 对所有 filetype 生效
+    │   │   └── python.lua        # 仅对 Python 生效
+    │   └── config.json           # 自动管理，无需手动编辑
+<
+
+*project_toolchain-init.lua*
+    `.nvim_proj/init.lua` 在切换到项目根目录时执行。
+    用于项目特定的初始化逻辑。
+
+*project_toolchain-lsp*
+    `.nvim_proj/lsp/*.lua` 中的所有 `.lua` 文件会在项目切换时加载。
+    用于项目专属的 LSP 配置。
+
+*project_toolchain-ftplugin*
+    `.nvim_proj/ftplugin/` 支持按 filetype 加载配置:
+    - `common.lua`     对所有 filetype 生效
+    - `<filetype>.lua` 仅对指定 filetype 生效（如 `python.lua`）
+
+    ftplugin 在每次缓冲区切换时加载（BufEnter 事件）。
+
+==============================================================================
+TRUST                                           *project_toolchain-trust*
+
+首次加载含 Lua 配置的项目时，插件会弹出信任提示。
+配置内容变更（SHA256 哈希变化）时将重新提示。
+
+信任列表存储在:
+    <datapath>/project_nvim/trusted_projects.json
+
+信任记录格式: >
+    [
+        { "path": "/path/to/project", "hash": "sha256hash" },
+        ...
+    ]
+<
+
+聚合哈希计算方法:
+1. 收集关键文件（init.lua、lsp/*.lua、ftplugin/*.lua）
+2. 对每个文件计算 SHA256
+3. 排序后拼接（`|` 分隔）
+4. 对拼接结果再次计算 SHA256
+
+==============================================================================
+NOTES                                           *project_toolchain-notes*
+
+- 插件会自动设置 `vim.opt.autochdir = false`
+- 项目历史最多保存 **100** 条记录
+- 历史文件路径: `<datapath>/project_nvim/project_history`
+- 项目配置路径: `<project_root>/.nvim_proj/config.json`
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
