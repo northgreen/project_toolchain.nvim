@@ -154,4 +154,4 @@ local function projects(opts)
     }):find()
 end
 
-return telescope.register_extension({exports = {projects = projects}})
+return telescope.register_extension({exports = {projects = projects,project_toolchain = projects}})
